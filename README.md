@@ -2,7 +2,7 @@
 
 A small Cloudflare Worker that books the current Arkkies gym-access slot and unlocks the door. Each person types their own Arkkies username and password. The Worker uses those credentials, for that request only, to call `https://api.arkkies.com/v2` (cookie login), then discards them.
 
-The page remembers your username, last gym, and home gym in the browser. It does not remember the password.
+The page remembers your username, last gym, and home gym in the browser. This personal fork also offers an explicit **Remember password on this device** checkbox. When selected after a successful action, the password is stored unencrypted in that browser's `localStorage`; use it only on a personal device and clear browser site data to remove it.
 
 There is no shared access key. Nothing in this repository has to be set as a Worker secret or variable before it will run.
 
@@ -99,7 +99,7 @@ Leaving the old secret in place has no effect, because the code never reads `env
 ## What the page does
 
 1. The gym dropdown is filled from Arkkies' public gym list. Product-only entries such as Ark+ are omitted.
-2. You enter your Arkkies username and password and pick a gym. The browser password manager can fill the fields. Your home gym is detected from your subscription and is not shown as a destination.
+2. You enter your Arkkies username and password and pick a gym. The browser password manager can fill the fields, or this personal fork can remember the password locally when you explicitly opt in. Your home gym is detected from your subscription and is not shown as a destination.
 3. **Book & Open Door** books the gym-access slot that contains the current time in Singapore, then unlocks the door. If a booking already covers now, it only unlocks.
 4. **Open Door** unlocks the door for an existing booking at that gym.
 
@@ -109,7 +109,7 @@ The form uses `method="post"`. JavaScript sends a JSON body. If JavaScript does 
 
 ### How credentials are handled
 
-- The password stays in the password field. `localStorage` stores three keys only: `arkkies.username`, `arkkies.destination`, and `arkkies.home`. It does not store the password.
+- By default, `localStorage` stores `arkkies.username`, `arkkies.destination`, and `arkkies.home`. If **Remember password on this device** is selected, it also stores the password as `arkkies.password` after a successful action. The value is unencrypted and is removed when the checkbox is cleared. The Worker itself still does not persist the password.
 - The browser sends the username and password in a POST body to `/api/status`, `/api/book-and-open`, or `/api/open-door`. Those routes reject any other method. If the URL contains a password, email, token, cookie, or similar parameter, the Worker refuses the request and, for the HTML page, redirects to the path with the query string removed. Do not put a password in a URL anyway: the address you requested can be retained by the platform before this code runs (see below).
 - For that one request, the Worker keeps the password and the Arkkies session cookie in memory. It logs in to `https://api.arkkies.com/v2`, books or unlocks, and then drops both. The cookie jar is not shared across requests.
 - The Worker does not write the password, session cookie, or login token to Workers KV, D1, R2, Durable Objects, or the Cache API. There are no such bindings. The Cache API is used only for the public gym catalog (`https://arkkies.com/app.bundle.js` and `https://api.arkkies.com/v2/brand/outlet`).
@@ -136,7 +136,7 @@ What those products document capturing:
 - **Workers Trace Events Logpush** is a separate job you would create in the dashboard. It is not configured here. If you enable it, it exports the same trace events (metadata, console lines, exceptions), not a copy of POST bodies.
 - **Zone HTTP request logs** (Logpush dataset `http_requests`), if you turn them on for a custom domain, are also separate. That dataset does not include POST bodies. Some optional fields include cookies; leave those off.
 
-Your browser's password manager may store the password on your device. That storage is outside this Worker.
+Your browser's password manager may store the password on your device. This personal fork can also store it unencrypted in browser `localStorage` when you explicitly opt in. Both forms of device storage are outside the Worker.
 
 ## Legacy app
 

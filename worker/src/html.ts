@@ -53,6 +53,26 @@ export function renderPage(): string {
       border: 1px solid var(--line);
       padding: 0.8rem 0.85rem;
     }
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--ink);
+      cursor: pointer;
+      margin: -0.15rem 0 0.3rem;
+    }
+    .remember input {
+      width: auto;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+    .storage-note {
+      display: block;
+      color: var(--muted);
+      font-size: 0.75rem;
+      line-height: 1.35;
+      margin: 0 0 0.9rem 1.55rem;
+    }
     button {
       border: 0;
       padding: 0.95rem 0.9rem;
@@ -88,6 +108,11 @@ export function renderPage(): string {
         <label for="password">Password</label>
         <input id="password" name="password" type="password" autocomplete="current-password" required />
       </div>
+      <label class="remember" for="rememberPassword">
+        <input id="rememberPassword" type="checkbox" />
+        <span>Remember password on this device</span>
+      </label>
+      <small class="storage-note">Stores the password unencrypted in this browser. Use only on your personal device.</small>
       <div class="field">
         <label for="destination">Gym to go to</label>
         <select id="destination" name="destination" required>
@@ -103,7 +128,12 @@ export function renderPage(): string {
     <p id="message" role="status"></p>
   </main>
   <script>
-    const STORE = { username: "arkkies.username", destination: "arkkies.destination", home: "arkkies.home" };
+    const STORE = {
+      username: "arkkies.username",
+      password: "arkkies.password",
+      destination: "arkkies.destination",
+      home: "arkkies.home",
+    };
     (function stripSensitiveQuery() {
       const sensitive = ["password", "passwd", "pass", "email", "username", "user", "cookie", "token", "csrf", "csrf_token", "key", "access_key", "authorization", "session"];
       const params = new URLSearchParams(location.search);
@@ -120,6 +150,7 @@ export function renderPage(): string {
     })();
     const emailEl = document.getElementById("email");
     const passwordEl = document.getElementById("password");
+    const rememberEl = document.getElementById("rememberPassword");
     const destEl = document.getElementById("destination");
     const messageEl = document.getElementById("message");
     const formEl = document.getElementById("actionForm");
@@ -137,17 +168,22 @@ export function renderPage(): string {
       try {
         return {
           username: localStorage.getItem(STORE.username) || "",
+          password: localStorage.getItem(STORE.password) || "",
           destination: localStorage.getItem(STORE.destination) || "",
           home: localStorage.getItem(STORE.home) || "",
         };
       } catch {
-        return { username: "", destination: "", home: "" };
+        return { username: "", password: "", destination: "", home: "" };
       }
     }
 
     function writeStore(partial) {
       try {
         if (partial.username != null) localStorage.setItem(STORE.username, partial.username);
+        if (Object.prototype.hasOwnProperty.call(partial, "password")) {
+          if (partial.password) localStorage.setItem(STORE.password, partial.password);
+          else localStorage.removeItem(STORE.password);
+        }
         if (partial.destination != null) localStorage.setItem(STORE.destination, partial.destination);
         if (partial.home) localStorage.setItem(STORE.home, partial.home);
       } catch {}
@@ -185,9 +221,10 @@ export function renderPage(): string {
       return data;
     }
 
-    function rememberFrom(data) {
+    function rememberFrom(data, includePassword) {
       const saved = {};
       saved.username = emailEl.value.trim();
+      if (includePassword) saved.password = rememberEl.checked ? passwordEl.value : "";
       if (destEl.value) saved.destination = destEl.value;
       const homeId = data && data.home && data.home.id;
       if (homeId) saved.home = homeId;
@@ -216,7 +253,7 @@ export function renderPage(): string {
           body: JSON.stringify(body),
         });
         const data = await parseJson(res);
-        rememberFrom(data);
+        rememberFrom(data, true);
         const label = data.window && data.window.label;
         const message = data.message || "Done.";
         setMessage(message.includes("SGT") || !label ? message : message + " " + label + ".", "ok");
@@ -246,10 +283,17 @@ export function renderPage(): string {
     emailEl.addEventListener("change", () => {
       writeStore({ username: emailEl.value.trim() });
     });
+    rememberEl.addEventListener("change", () => {
+      if (!rememberEl.checked) writeStore({ password: "" });
+    });
 
     (async function init() {
       const saved = readStore();
       if (saved.username) emailEl.value = saved.username;
+      if (saved.password) {
+        passwordEl.value = saved.password;
+        rememberEl.checked = true;
+      }
       setMessage("Loading gyms…");
       try {
         const res = await fetch("/api/gyms", { credentials: "omit", cache: "no-store", headers: { Accept: "application/json" } });

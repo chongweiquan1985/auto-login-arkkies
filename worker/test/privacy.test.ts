@@ -119,18 +119,21 @@ describe("redaction", () => {
 });
 
 describe("page", () => {
-  it("posts credentials and remembers only username, gym, and home gym", () => {
+  it("posts credentials and stores the password only behind an explicit device-local opt-in", () => {
     const html = renderPage();
     expect(html).toContain('method="post"');
     expect(html).toContain('action="/api/book-and-open"');
     expect(html).toContain('autocomplete="current-password"');
     expect(html).toContain("arkkies.username");
+    expect(html).toContain("arkkies.password");
     expect(html).toContain("arkkies.destination");
     expect(html).toContain("arkkies.home");
+    expect(html).toContain('id="rememberPassword"');
+    expect(html).toContain("Stores the password unencrypted in this browser");
+    expect(html).toContain('rememberEl.checked ? passwordEl.value : ""');
+    expect(html).toContain("localStorage.removeItem(STORE.password)");
     expect(html).not.toContain("?key=");
     expect(html).not.toContain("ACCESS_KEY");
-    expect(html).not.toContain("localStorage.setItem(STORE.password");
-    expect(html).not.toMatch(/localStorage\.setItem\(\s*["']arkkies\.password/);
   });
 });
 
