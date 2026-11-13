@@ -129,7 +129,7 @@ describe("page", () => {
     expect(html).toContain("arkkies.destination");
     expect(html).toContain("arkkies.home");
     expect(html).toContain('id="rememberPassword"');
-    expect(html).toContain("Stores the password unencrypted in this browser");
+    expect(html).not.toContain("Stores the password unencrypted in this browser");
     expect(html).toContain('rememberEl.checked ? passwordEl.value : ""');
     expect(html).toContain("localStorage.removeItem(STORE.password)");
     expect(html).not.toContain("?key=");

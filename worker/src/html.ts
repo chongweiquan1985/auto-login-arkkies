@@ -66,13 +66,6 @@ export function renderPage(): string {
       margin: 0;
       accent-color: var(--accent);
     }
-    .storage-note {
-      display: block;
-      color: var(--muted);
-      font-size: 0.75rem;
-      line-height: 1.35;
-      margin: 0 0 0.9rem 1.55rem;
-    }
     button {
       border: 0;
       padding: 0.95rem 0.9rem;
@@ -112,7 +105,6 @@ export function renderPage(): string {
         <input id="rememberPassword" type="checkbox" />
         <span>Remember password on this device</span>
       </label>
-      <small class="storage-note">Stores the password unencrypted in this browser. Use only on your personal device.</small>
       <div class="field">
         <label for="destination">Gym to go to</label>
         <select id="destination" name="destination" required>
